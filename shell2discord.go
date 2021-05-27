@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 
 	"github.com/bwmarrin/discordgo"
@@ -21,7 +24,7 @@ var (
 	RemoveCommands = flag.Bool("rmcmd", true, "Remove all commands after shutdowning or not")
 )
 
-var s *discordgo.Session
+var session *discordgo.Session
 
 var commands []*discordgo.ApplicationCommand
 var commandHandlers map[string]string = make(map[string]string)
@@ -51,7 +54,7 @@ func init() {
 // Starts bot
 func init() {
 	var err error
-	s, err = discordgo.New("Bot " + *BotToken)
+	session, err = discordgo.New("Bot " + *BotToken)
 	if err != nil {
 		log.Fatalf("Invalid bot parameters: %v", err)
 	}
@@ -59,35 +62,53 @@ func init() {
 
 // Add command handlers
 func init() {
-	s.AddHandler(func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	session.AddHandler(func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 		var interactionName = interaction.Data.Name
 		if shellCmd, ok := commandHandlers[interactionName]; ok {
-			log.Printf("/%s: `%s", interactionName, shellCmd)
+			ctx := context.Background()
+			osExecCommand := exec.CommandContext(ctx, "sh", "-c", shellCmd)
+			osExecCommand.Stderr = os.Stderr
+
+			var reply string
+			shellOut, err := osExecCommand.Output()
+			if err != nil {
+				reply = fmt.Sprintf("exec error: %s", err)
+			} else {
+				reply = string(shellOut)
+			}
+
+			// Reply with shell command output.
+			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionApplicationCommandResponseData{
+					Content: reply,
+				},
+			})
 		}
 	})
 }
 
 func main() {
-	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Println("Bot is up!")
 	})
-	err := s.Open()
+	err := session.Open()
 	if err != nil {
 		log.Fatalf("Cannot open the session: %v", err)
 	}
 
 	for _, v := range commands {
 		log.Printf("Adding command %v", v)
-		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, *GuildID, v)
+		command, err := session.ApplicationCommandCreate(session.State.User.ID, *GuildID, v)
 		if err != nil {
 			log.Panicf("Cannot create '%s' command: %v", v.Name, err)
 		}
 		log.Printf("Command /%s added", v.Name)
 		// Store the command ID so we can remove it on exit.
-		v.ID = cmd.ID
+		v.ID = command.ID
 	}
 
-	defer s.Close()
+	defer session.Close()
 
 	stop := make(chan os.Signal)
 	signal.Notify(stop, os.Interrupt)
@@ -97,7 +118,7 @@ func main() {
 	if *RemoveCommands {
 		log.Println("Removing commands")
 		for _, v := range commands {
-			if err = s.ApplicationCommandDelete(s.State.User.ID, *GuildID, v.ID); err != nil {
+			if err = session.ApplicationCommandDelete(session.State.User.ID, *GuildID, v.ID); err != nil {
 				log.Printf("Could not delete '%s' command: %v", v.Name, err)
 			}
 		}
