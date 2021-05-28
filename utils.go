@@ -19,9 +19,14 @@ func parseBotCommand(slashCommand string, shellCommand string) (commandName stri
 	matches := paramsRe.FindAllStringSubmatch(shellCommand, -1)
 	matchesLen := len(matches)
 
-	params = make([]string, matchesLen)
+	paramsMap := map[string]bool{}
+
 	for i := 0; i < matchesLen; i++ {
-		params[i] = matches[i][1]
+		param := matches[i][1]
+		if !paramsMap[param] {
+			params = append(params, param)
+			paramsMap[param] = true
+		}
 	}
 
 	return commandName, params
