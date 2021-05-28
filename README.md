@@ -20,5 +20,6 @@ options:
 ## Examples
 
 ```shell
-shell2discord /hello "echo 'World'"
+shell2discord /hello 'echo "World"'
+shell2discord /mirror 'curl "${url}" > "${outfile}"'
 ```

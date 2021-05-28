@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/joho/godotenv/autoload"
@@ -41,11 +42,28 @@ func init() {
 	}
 
 	for i := 0; i < len(args); i += 2 {
-		commandName, shellCmd := parseBotCommand(args[i], args[i+1])
-		commandHandlers[commandName] = shellCmd
+		shellCommand := args[i+1]
+		commandName, params := parseBotCommand(args[i], shellCommand)
+		paramsLen := len(params)
+
+		options := make([]*discordgo.ApplicationCommandOption, paramsLen)
+		for i := 0; i < paramsLen; i++ {
+			options[i] = &discordgo.ApplicationCommandOption{
+				// Shell variables have no type, so we just use String in Discord.
+				Type: discordgo.ApplicationCommandOptionString,
+				Name: params[i],
+				// @TODO: Parse option description from flag.
+				Description: params[i],
+				Required:    true,
+			}
+		}
+
+		commandHandlers[commandName] = shellCommand
 		command := &discordgo.ApplicationCommand{
-			Name:        commandName,
+			Name: commandName,
+			// @TODO: Parse command description from flag.
 			Description: "Test command",
+			Options:     options,
 		}
 		commands = append(commands, command)
 	}
@@ -64,7 +82,17 @@ func init() {
 func init() {
 	session.AddHandler(func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 		var interactionName = interaction.Data.Name
+		var options = interaction.Data.Options
+
 		if shellCmd, ok := commandHandlers[interactionName]; ok {
+			for i := 0; i < len(options); i++ {
+				option := options[i]
+				variable := fmt.Sprintf("${%s}", option.Name)
+				shellCmd = strings.Replace(shellCmd, variable, option.StringValue(), -1)
+			}
+
+			log.Println("Executing:", shellCmd)
+
 			ctx := context.Background()
 			osExecCommand := exec.CommandContext(ctx, "sh", "-c", shellCmd)
 			osExecCommand.Stderr = os.Stderr
@@ -75,6 +103,10 @@ func init() {
 				reply = fmt.Sprintf("exec error: %s", err)
 			} else {
 				reply = string(shellOut)
+			}
+
+			if reply == "" {
+				reply = "Command Executed"
 			}
 
 			// Reply with shell command output.

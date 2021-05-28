@@ -6,23 +6,25 @@ import (
 )
 
 // parseBotCommand - parse command-line arguments for one bot command
-func parseBotCommand(slashCommand, shellCommand string) (commandName string, command string) {
-	if len(slashCommand) == 0 || slashCommand[0] != '/' {
-		log.Fatalf("error: path %s doesn't start with /", slashCommand)
+func parseBotCommand(slashCommand string, shellCommand string) (commandName string, params []string) {
+	commandRe := regexp.MustCompile(`^/([\w-]{1,32})$`)
+	commandMatches := commandRe.FindStringSubmatch(slashCommand)
+
+	if commandMatches == nil {
+		log.Fatalf("error: invalid command %s", slashCommand)
 	}
-	if stringIsEmpty(shellCommand) {
-		log.Fatalf("error: shell command cannot be empty")
+	commandName = commandMatches[1]
+
+	paramsRe := regexp.MustCompile(`\${(\w+)}`)
+	matches := paramsRe.FindAllStringSubmatch(shellCommand, -1)
+	matchesLen := len(matches)
+
+	params = make([]string, matchesLen)
+	for i := 0; i < matchesLen; i++ {
+		params[i] = matches[i][1]
 	}
 
-	// Substring after "/" is the commandName.
-	runes := []rune(slashCommand)
-	commandName = string(runes[1:])
-
-	// @TODO: check against Discord's `^[\w-]{1,32}$`.
-
-	// @TODO: parse command arguments from shellCommand
-
-	return commandName, shellCommand
+	return commandName, params
 }
 
 // stringIsEmpty - check string is empty
