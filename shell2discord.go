@@ -21,6 +21,7 @@ const (
 // Bot parameters
 var (
 	GuildID        = flag.String("guild", os.Getenv("DISCORD_GUILD"), "Test guild ID. If not passed - bot registers commands globally")
+	ChannelIDs     = flag.String("channels", os.Getenv("DISCORD_CHANNELS"), `Discord channels that are allowed to use the bot ("channel1,channel2")`)
 	BotToken       = flag.String("token", os.Getenv("DISCORD_TOKEN"), "Bot access token")
 	RemoveCommands = flag.Bool("rmcmd", true, "Remove all commands after shutdowning or not")
 )
@@ -81,6 +82,18 @@ func init() {
 // Add command handlers
 func init() {
 	session.AddHandler(func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+
+		if *ChannelIDs != "" && !strings.Contains(*ChannelIDs, interaction.ChannelID) {
+			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionApplicationCommandResponseData{
+					Content: "Unauthorized",
+				},
+			})
+
+			return
+		}
+
 		var interactionName = interaction.Data.Name
 		var options = interaction.Data.Options
 
