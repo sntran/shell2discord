@@ -19,6 +19,7 @@ options:
     --token=<TOKEN> : Discord token
     --guild=<GUILD_ID>: Discord GUILD ID to limit commands to.
     --channels=<CHANNEL_ID>,<CHANNEL_ID>: Comma-separated list of channel IDs in which the bot can be used.
+    --export-vars=<VAR1>,<VAR2>: Comma-separated list of environment variables to pass to the shell command.
 ```
 
 ## Examples
@@ -26,4 +27,6 @@ options:
 ```shell
 shell2discord /hello 'echo "World"'
 shell2discord /mirror 'curl "${url}" > "${outfile}"'
+shell2discord --export-vars=GOOGLE_MAPS_API_KEY \
+    /geocode 'curl "https://maps.googleapis.com/maps/api/geocode/json?latlng=${latlng}&key=$GOOGLE_MAPS_API_KEY"'
 ```

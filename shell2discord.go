@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"regexp"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -23,6 +24,7 @@ var (
 	GuildID        = flag.String("guild", os.Getenv("DISCORD_GUILD"), "Test guild ID. If not passed - bot registers commands globally")
 	ChannelIDs     = flag.String("channels", os.Getenv("DISCORD_CHANNELS"), `Discord channels that are allowed to use the bot ("channel1,channel2")`)
 	BotToken       = flag.String("token", os.Getenv("DISCORD_TOKEN"), "Bot access token")
+	ExportVars     = flag.String("export-vars", "", `export environment vars to shell command ("VAR1,VAR2,...")`)
 	RemoveCommands = flag.Bool("rmcmd", true, "Remove all commands after shutdowning or not")
 )
 
@@ -109,6 +111,17 @@ func init() {
 			ctx := context.Background()
 			osExecCommand := exec.CommandContext(ctx, "sh", "-c", shellCmd)
 			osExecCommand.Stderr = os.Stderr
+
+			// Passthrough environment variables set from `--export-vars` to the shell.
+			enVarRe := regexp.MustCompile(`,`)
+			envVars := enVarRe.Split(*ExportVars, -1)
+			for i := 0; i < len(envVars); i++ {
+				envVar := envVars[i]
+				osExecCommand.Env = append(
+					osExecCommand.Env,
+					fmt.Sprintf("%s=%s", envVar, os.Getenv(envVar)),
+				)
+			}
 
 			var reply string
 			shellOut, err := osExecCommand.Output()
