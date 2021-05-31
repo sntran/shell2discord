@@ -49,8 +49,6 @@ func (command Command) Exec(session *discordgo.Session, interaction *discordgo.I
 	session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionApplicationCommandResponseData{
-			// Makes this response ephemeral—only the invoking user can see it
-			Flags:   1 << 6,
 			Content: "Thinking...",
 		},
 	})
