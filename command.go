@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -74,19 +75,38 @@ func (command Command) Exec(session *discordgo.Session, interaction *discordgo.I
 		reply = "Command Executed"
 	}
 
-	// Splits the reply into 2000-character messages for Discord.
-	messages := chunks(reply, 2000)
+	if len(reply) > 2000 {
+		fileName := command.Name
 
-	for _, content := range messages {
-		_, err := session.FollowupMessageCreate(session.State.User.ID, interaction.Interaction, true, &discordgo.WebhookParams{
-			Content: content,
-		})
-
-		if err != nil {
-			session.FollowupMessageCreate(session.State.User.ID, interaction.Interaction, true, &discordgo.WebhookParams{
-				Content: "Something went wrong",
-			})
-			return
+		for i := 0; i < len(options); i++ {
+			option := options[i]
+			value := option.StringValue()
+			if value != "" {
+				fileName += "_" + option.Name + "_" + value
+			}
 		}
+
+		currentTime := time.Now()
+		fileName += "_" + currentTime.Format("2006-01-02T15:04:05") + ".txt"
+
+		_, err = session.FollowupMessageCreate(session.State.User.ID, interaction.Interaction, true, &discordgo.WebhookParams{
+			Files: []*discordgo.File{
+				{
+					Name:   fileName,
+					Reader: strings.NewReader(reply),
+				},
+			},
+		})
+	} else {
+		_, err = session.FollowupMessageCreate(session.State.User.ID, interaction.Interaction, true, &discordgo.WebhookParams{
+			Content: reply,
+		})
+	}
+
+	if err != nil {
+		session.FollowupMessageCreate(session.State.User.ID, interaction.Interaction, true, &discordgo.WebhookParams{
+			Content: "Something went wrong",
+		})
+		return
 	}
 }
