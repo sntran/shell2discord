@@ -25,8 +25,15 @@ options:
 ## Examples
 
 ```shell
+# Command with no param.
 shell2discord /hello 'echo "World"'
+# Optional param `word` with empty default value.
+shell2discord /hello 'echo "Hello ${word-}"'
+# Optional param `word` with default value of "World".
+shell2discord /hello 'echo "Hello ${word-World}"'
+# Command with required params.
 shell2discord /mirror 'curl "${url}" > "${outfile}"'
+# Command with allowed environment variables.
 shell2discord --export-vars=GOOGLE_MAPS_API_KEY \
     /geocode 'curl "https://maps.googleapis.com/maps/api/geocode/json?latlng=${latlng}&key=$GOOGLE_MAPS_API_KEY"'
 ```

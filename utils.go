@@ -10,7 +10,7 @@ import (
 )
 
 // parseBotCommand - parse command-line arguments for one bot command
-func parseBotCommand(slashCommand string, shellCommand string) (commandName string, params []string) {
+func parseBotCommand(slashCommand string, shellCommand string) (commandName string, params map[string]string) {
 	commandRe := regexp.MustCompile(`^/([\w-]{1,32})$`)
 	commandMatches := commandRe.FindStringSubmatch(slashCommand)
 
@@ -19,17 +19,18 @@ func parseBotCommand(slashCommand string, shellCommand string) (commandName stri
 	}
 	commandName = commandMatches[1]
 
-	paramsRe := regexp.MustCompile(`\${(\w+)}`)
+	// Parse variable with optional default value, `${foo-bar}`
+	paramsRe := regexp.MustCompile(`\${(\w+)(-\w*)?}`)
 	matches := paramsRe.FindAllStringSubmatch(shellCommand, -1)
 	matchesLen := len(matches)
 
-	paramsMap := map[string]bool{}
-
+	params = map[string]string{}
 	for i := 0; i < matchesLen; i++ {
-		param := matches[i][1]
-		if !paramsMap[param] {
-			params = append(params, param)
-			paramsMap[param] = true
+		name := matches[i][1]
+		value := matches[i][2]
+
+		if _, ok := params[name]; !ok {
+			params[name] = value
 		}
 	}
 

@@ -11,24 +11,26 @@ import (
 type Command struct {
 	*discordgo.ApplicationCommand
 	Script string
+	Params map[string]string
 	Env    []string
 }
 
 // Creates a new command from `/command 'shell command'`.
 func NewCommand(slashCommand string, shellCommand string) *Command {
 	commandName, params := parseBotCommand(slashCommand, shellCommand)
-	paramsLen := len(params)
 
-	options := make([]*discordgo.ApplicationCommandOption, paramsLen)
-	for i := 0; i < paramsLen; i++ {
-		options[i] = &discordgo.ApplicationCommandOption{
+	options := []*discordgo.ApplicationCommandOption{}
+	for paramName, paramValue := range params {
+		option := &discordgo.ApplicationCommandOption{
 			// Shell variables have no type, so we just use String in Discord.
 			Type: discordgo.ApplicationCommandOptionString,
-			Name: params[i],
+			Name: paramName,
 			// @TODO: Parse option description from flag.
-			Description: params[i],
-			Required:    true,
+			Description: paramName,
+			Required:    paramValue == "",
 		}
+
+		options = append(options, option)
 	}
 
 	return &Command{
@@ -38,6 +40,7 @@ func NewCommand(slashCommand string, shellCommand string) *Command {
 			Options:     options,
 		},
 		Script: shellCommand,
+		Params: params,
 	}
 }
 
@@ -55,10 +58,19 @@ func (command Command) Exec(session *discordgo.Session, interaction *discordgo.I
 	var options = interaction.Data.Options
 
 	shellCommand := command.Script
+	params := command.Params
 	for i := 0; i < len(options); i++ {
 		option := options[i]
-		variable := fmt.Sprintf("${%s}", option.Name)
-		shellCommand = strings.Replace(shellCommand, variable, option.StringValue(), -1)
+		optionName := option.Name
+		defaultValue := params[optionName]
+		variable := fmt.Sprintf("${%s%s}", optionName, defaultValue)
+		value := option.StringValue()
+		// Optional option will have empty value, use default value instead.
+		if value == "" {
+			// Default value has a `-` at the begining.
+			value = defaultValue[1:]
+		}
+		shellCommand = strings.Replace(shellCommand, variable, value, -1)
 	}
 
 	var reply string
