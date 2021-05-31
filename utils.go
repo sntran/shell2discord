@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
+	"os"
+	"os/exec"
 	"regexp"
 )
 
@@ -32,8 +36,19 @@ func parseBotCommand(slashCommand string, shellCommand string) (commandName stri
 	return commandName, params
 }
 
-// stringIsEmpty - check string is empty
-func stringIsEmpty(str string) bool {
-	isEmpty, _ := regexp.MatchString(`^\s*$`, str)
-	return isEmpty
+// Executes a shell command.
+func execShellCommand(shellCommand string, envVars []string) (shellOut []byte, err error) {
+	ctx := context.Background()
+	osExecCommand := exec.CommandContext(ctx, "sh", "-c", shellCommand)
+	osExecCommand.Stderr = os.Stderr
+
+	for i := 0; i < len(envVars); i++ {
+		envVar := envVars[i]
+		osExecCommand.Env = append(
+			osExecCommand.Env,
+			fmt.Sprintf("%s=%s", envVar, os.Getenv(envVar)),
+		)
+	}
+
+	return osExecCommand.Output()
 }

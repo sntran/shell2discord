@@ -1,10 +1,7 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -54,22 +51,10 @@ func (command Command) Exec(session *discordgo.Session, interaction *discordgo.I
 		shellCommand = strings.Replace(shellCommand, variable, option.StringValue(), -1)
 	}
 
-	ctx := context.Background()
-	osExecCommand := exec.CommandContext(ctx, "sh", "-c", shellCommand)
-	osExecCommand.Stderr = os.Stderr
-
-	// Passthrough environment variables set from Env variables to the shell.
-	envVars := command.Env
-	for i := 0; i < len(envVars); i++ {
-		envVar := envVars[i]
-		osExecCommand.Env = append(
-			osExecCommand.Env,
-			fmt.Sprintf("%s=%s", envVar, os.Getenv(envVar)),
-		)
-	}
-
 	var reply string
-	shellOut, err := osExecCommand.Output()
+	// Execute shell command, passing through environment variables.
+	shellOut, err := execShellCommand(shellCommand, command.Env)
+
 	if err != nil {
 		reply = fmt.Sprintf("exec error: %s", err)
 	} else {
