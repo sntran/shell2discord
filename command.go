@@ -42,6 +42,15 @@ func NewCommand(slashCommand string, shellCommand string) *Command {
 
 // Executes a command based on Discord's interaction to it.
 func (command Command) Exec(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionApplicationCommandResponseData{
+			// Makes this response ephemeral—only the invoking user can see it
+			Flags:   1 << 6,
+			Content: "Thinking...",
+		},
+	})
+
 	var options = interaction.Data.Options
 
 	shellCommand := command.Script
@@ -65,11 +74,19 @@ func (command Command) Exec(session *discordgo.Session, interaction *discordgo.I
 		reply = "Command Executed"
 	}
 
-	// Reply with shell command output.
-	session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionApplicationCommandResponseData{
-			Content: reply,
-		},
-	})
+	// Splits the reply into 2000-character messages for Discord.
+	messages := chunks(reply, 2000)
+
+	for _, content := range messages {
+		_, err := session.FollowupMessageCreate(session.State.User.ID, interaction.Interaction, true, &discordgo.WebhookParams{
+			Content: content,
+		})
+
+		if err != nil {
+			session.FollowupMessageCreate(session.State.User.ID, interaction.Interaction, true, &discordgo.WebhookParams{
+				Content: "Something went wrong",
+			})
+			return
+		}
+	}
 }
