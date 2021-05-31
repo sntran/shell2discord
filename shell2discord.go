@@ -1,12 +1,9 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"os/signal"
 	"regexp"
 	"strings"
@@ -30,8 +27,7 @@ var (
 
 var session *discordgo.Session
 
-var commands []*discordgo.ApplicationCommand
-var commandHandlers map[string]string = make(map[string]string)
+var commands map[string]*Command = make(map[string]*Command)
 
 // Parse arguments
 func init() {
@@ -44,31 +40,13 @@ func init() {
 		log.Fatalf("error: need pairs of shell-command")
 	}
 
+	enVarRe := regexp.MustCompile(`,`)
+	envVars := enVarRe.Split(*ExportVars, -1)
+
 	for i := 0; i < len(args); i += 2 {
-		shellCommand := args[i+1]
-		commandName, params := parseBotCommand(args[i], shellCommand)
-		paramsLen := len(params)
-
-		options := make([]*discordgo.ApplicationCommandOption, paramsLen)
-		for i := 0; i < paramsLen; i++ {
-			options[i] = &discordgo.ApplicationCommandOption{
-				// Shell variables have no type, so we just use String in Discord.
-				Type: discordgo.ApplicationCommandOptionString,
-				Name: params[i],
-				// @TODO: Parse option description from flag.
-				Description: params[i],
-				Required:    true,
-			}
-		}
-
-		commandHandlers[commandName] = shellCommand
-		command := &discordgo.ApplicationCommand{
-			Name: commandName,
-			// @TODO: Parse command description from flag.
-			Description: "Test command",
-			Options:     options,
-		}
-		commands = append(commands, command)
+		command := NewCommand(args[i], args[i+1])
+		command.Env = envVars
+		commands[command.Name] = command
 	}
 }
 
@@ -97,51 +75,8 @@ func init() {
 		}
 
 		var interactionName = interaction.Data.Name
-		var options = interaction.Data.Options
-
-		if shellCmd, ok := commandHandlers[interactionName]; ok {
-			for i := 0; i < len(options); i++ {
-				option := options[i]
-				variable := fmt.Sprintf("${%s}", option.Name)
-				shellCmd = strings.Replace(shellCmd, variable, option.StringValue(), -1)
-			}
-
-			log.Println("Executing:", shellCmd)
-
-			ctx := context.Background()
-			osExecCommand := exec.CommandContext(ctx, "sh", "-c", shellCmd)
-			osExecCommand.Stderr = os.Stderr
-
-			// Passthrough environment variables set from `--export-vars` to the shell.
-			enVarRe := regexp.MustCompile(`,`)
-			envVars := enVarRe.Split(*ExportVars, -1)
-			for i := 0; i < len(envVars); i++ {
-				envVar := envVars[i]
-				osExecCommand.Env = append(
-					osExecCommand.Env,
-					fmt.Sprintf("%s=%s", envVar, os.Getenv(envVar)),
-				)
-			}
-
-			var reply string
-			shellOut, err := osExecCommand.Output()
-			if err != nil {
-				reply = fmt.Sprintf("exec error: %s", err)
-			} else {
-				reply = string(shellOut)
-			}
-
-			if reply == "" {
-				reply = "Command Executed"
-			}
-
-			// Reply with shell command output.
-			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionApplicationCommandResponseData{
-					Content: reply,
-				},
-			})
+		if command, ok := commands[interactionName]; ok {
+			command.Exec(session, interaction)
 		}
 	})
 }
@@ -157,7 +92,7 @@ func main() {
 
 	for _, v := range commands {
 		log.Printf("Adding command %v", v)
-		command, err := session.ApplicationCommandCreate(session.State.User.ID, *GuildID, v)
+		command, err := session.ApplicationCommandCreate(session.State.User.ID, *GuildID, v.ApplicationCommand)
 		if err != nil {
 			log.Panicf("Cannot create '%s' command: %v", v.Name, err)
 		}
