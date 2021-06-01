@@ -2,6 +2,14 @@
 
 Create Discord splash commands from command-line.
 
+## Disclaimer
+
+This program is written by a developer first-time using Go. Bugs and smells are expected.
+Pull requests are welcome to help make the program and its author better.
+
+Golang is not the developer's language of choice, but due to the nature of this program,
+the ability to have cross-platform static binary from Go makes it a suitable choice.
+
 ## Usage
 
 Get a Discord token from Developer portal, and set `DISCORD_TOKEN` environment variable in shell.
