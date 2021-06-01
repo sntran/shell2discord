@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -82,6 +83,8 @@ func init() {
 }
 
 func main() {
+	fmt.Printf("shell2discord v%s\n\n", Version)
+
 	session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Println("Bot is up!")
 	})
