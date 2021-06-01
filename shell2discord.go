@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	Version = "0.1"
+	Version = "0.3"
 )
 
 // Bot parameters

@@ -30,11 +30,26 @@ options:
     --export-vars=<VAR1>,<VAR2>: Comma-separated list of environment variables to pass to the shell command.
 ```
 
+## Shell commands
+
+The shell command argument for the slash command should be written as if it would be run in a normal shell,
+except that it must be wrapped in a pair single quotes.
+
+That is:
+
+- Variables are enclosed in `${}`. They become required options.
+- Optional variable with default value as `${variable-default}`.
+- `default` can be an empty string, and the variable is still optional.
+- Description is written as the first comment line.
+
 ## Examples
 
 ```shell
 # Command with no param.
 shell2discord /hello 'echo "World"'
+# Command with description
+shell2discord /hello '# Command description here \
+    echo "World"'
 # Optional param `word` with empty default value.
 shell2discord /hello 'echo "Hello ${word-}"'
 # Optional param `word` with default value of "World".
