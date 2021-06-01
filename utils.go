@@ -20,7 +20,7 @@ func parseBotCommand(slashCommand string, shellCommand string) (commandName stri
 	commandName = commandMatches[1]
 
 	// Parse variable with optional default value, `${foo-bar}`
-	paramsRe := regexp.MustCompile(`\${(\w+)(-\w*)?}`)
+	paramsRe := regexp.MustCompile(`\${(\w+)(-[^}]*)?}`)
 	matches := paramsRe.FindAllStringSubmatch(shellCommand, -1)
 	matchesLen := len(matches)
 
