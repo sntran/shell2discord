@@ -7,10 +7,11 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strings"
 )
 
 // parseBotCommand - parse command-line arguments for one bot command
-func parseBotCommand(slashCommand string, shellCommand string) (commandName string, params map[string]string) {
+func parseBotCommand(slashCommand string, shellCommand string) (commandName string, description string, params map[string]string) {
 	commandRe := regexp.MustCompile(`^/([\w-]{1,32})$`)
 	commandMatches := commandRe.FindStringSubmatch(slashCommand)
 
@@ -18,23 +19,31 @@ func parseBotCommand(slashCommand string, shellCommand string) (commandName stri
 		log.Fatalf("error: invalid command %s", slashCommand)
 	}
 	commandName = commandMatches[1]
+	description = commandName + " command"
+
+	descriptionRe := regexp.MustCompile(`#([^\\]+)\\`)
+	descriptionMatch := descriptionRe.FindStringSubmatch(shellCommand)
+
+	if len(descriptionMatch) > 0 && descriptionMatch[1] != "" {
+		description = strings.TrimSpace(descriptionMatch[1])
+	}
 
 	// Parse variable with optional default value, `${foo-bar}`
 	paramsRe := regexp.MustCompile(`\${(\w+)(-[^}]*)?}`)
-	matches := paramsRe.FindAllStringSubmatch(shellCommand, -1)
-	matchesLen := len(matches)
+	paramMatches := paramsRe.FindAllStringSubmatch(shellCommand, -1)
+	matchesLen := len(paramMatches)
 
 	params = map[string]string{}
 	for i := 0; i < matchesLen; i++ {
-		name := matches[i][1]
-		value := matches[i][2]
+		name := paramMatches[i][1]
+		value := paramMatches[i][2]
 
 		if _, ok := params[name]; !ok {
 			params[name] = value
 		}
 	}
 
-	return commandName, params
+	return commandName, description, params
 }
 
 // Executes a shell command.

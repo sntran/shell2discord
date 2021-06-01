@@ -17,16 +17,15 @@ type Command struct {
 
 // Creates a new command from `/command 'shell command'`.
 func NewCommand(slashCommand string, shellCommand string) *Command {
-	commandName, params := parseBotCommand(slashCommand, shellCommand)
+	commandName, description, params := parseBotCommand(slashCommand, shellCommand)
 
 	options := []*discordgo.ApplicationCommandOption{}
 	for paramName, paramValue := range params {
 		option := &discordgo.ApplicationCommandOption{
 			// Shell variables have no type, so we just use String in Discord.
-			Type: discordgo.ApplicationCommandOptionString,
-			Name: paramName,
-			// @TODO: Parse option description from flag.
-			Description: paramName,
+			Type:        discordgo.ApplicationCommandOptionString,
+			Name:        paramName,
+			Description: paramName, // @TODO: Parse option description from flag.
 			Required:    paramValue == "",
 		}
 
@@ -36,7 +35,7 @@ func NewCommand(slashCommand string, shellCommand string) *Command {
 	return &Command{
 		ApplicationCommand: &discordgo.ApplicationCommand{
 			Name:        commandName,
-			Description: commandName + " command",
+			Description: description,
 			Options:     options,
 		},
 		Script: shellCommand,
