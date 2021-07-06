@@ -68,7 +68,7 @@ func init() {
 		if *ChannelIDs != "" && !strings.Contains(*ChannelIDs, interaction.ChannelID) {
 			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionApplicationCommandResponseData{
+				Data: &discordgo.InteractionResponseData{
 					Content: "Unauthorized",
 				},
 			})
@@ -76,7 +76,7 @@ func init() {
 			return
 		}
 
-		var interactionName = interaction.Data.Name
+		var interactionName = interaction.ApplicationCommandData().Name
 		if command, ok := commands[interactionName]; ok {
 			command.Exec(session, interaction)
 		}

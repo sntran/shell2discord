@@ -47,12 +47,12 @@ func NewCommand(slashCommand string, shellCommand string) *Command {
 func (command Command) Exec(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionApplicationCommandResponseData{
+		Data: &discordgo.InteractionResponseData{
 			Content: "Thinking...",
 		},
 	})
 
-	var options = interaction.Data.Options
+	var options = interaction.ApplicationCommandData().Options
 
 	shellCommand := command.Script
 	params := command.Params

@@ -1,5 +1,7 @@
 github.com/bwmarrin/discordgo v0.23.3-0.20210520041320-df74d8bbe6cd h1:T8T9VfhlLBEkR+ptxKfMMehZtNh5OdZiSKdZlTyfKoI=
 github.com/bwmarrin/discordgo v0.23.3-0.20210520041320-df74d8bbe6cd/go.mod h1:NJZpH+1AfhIcyQsPeuBKsUtYrRnjkyu0kIVMCHkZtRY=
+github.com/bwmarrin/discordgo v0.23.3-0.20210627161652-421e14965030 h1:JgAlPJlCqsrUqXcClndnvF6LOjV528hpU/l5YzN++PA=
+github.com/bwmarrin/discordgo v0.23.3-0.20210627161652-421e14965030/go.mod h1:NJZpH+1AfhIcyQsPeuBKsUtYrRnjkyu0kIVMCHkZtRY=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
