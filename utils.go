@@ -49,7 +49,7 @@ func parseBotCommand(slashCommand string, shellCommand string) (commandName stri
 // Executes a shell command.
 func execShellCommand(shellCommand string, envVars []string) (shellOut []byte, err error) {
 	ctx := context.Background()
-	osExecCommand := exec.CommandContext(ctx, "sh", "-c", shellCommand)
+	osExecCommand := exec.CommandContext(ctx, *ShellBinary, "-c", shellCommand)
 	osExecCommand.Stderr = os.Stderr
 
 	for i := 0; i < len(envVars); i++ {
