@@ -22,6 +22,7 @@ var (
 	GuildID        = flag.String("guild", os.Getenv("DISCORD_GUILD"), "Test guild ID. If not passed - bot registers commands globally")
 	ChannelIDs     = flag.String("channels", os.Getenv("DISCORD_CHANNELS"), `Discord channels that are allowed to use the bot ("channel1,channel2")`)
 	BotToken       = flag.String("token", os.Getenv("DISCORD_TOKEN"), "Bot access token")
+	ShellBinary    = flag.String("shell", "sh", "The name or path of the Shell Binary to invoke")
 	ExportVars     = flag.String("export-vars", "", `export environment vars to shell command ("VAR1,VAR2,...")`)
 	RemoveCommands = flag.Bool("rmcmd", true, "Remove all commands after shutdowning or not")
 )
