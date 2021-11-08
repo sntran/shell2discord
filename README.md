@@ -28,6 +28,7 @@ options:
     --guild=<GUILD_ID>: Discord GUILD ID to limit commands to.
     --channels=<CHANNEL_ID>,<CHANNEL_ID>: Comma-separated list of channel IDs in which the bot can be used.
     --export-vars=<VAR1>,<VAR2>: Comma-separated list of environment variables to pass to the shell command.
+    --shell=<SHELL_BINARY_NAME>: Name of the shell binary to execute command with via the -c flag. Defaults to 'sh'.
 ```
 
 ## Shell commands
