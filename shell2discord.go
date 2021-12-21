@@ -21,6 +21,7 @@ const (
 var (
 	GuildID        = flag.String("guild", os.Getenv("DISCORD_GUILD"), "Test guild ID. If not passed - bot registers commands globally")
 	ChannelIDs     = flag.String("channels", os.Getenv("DISCORD_CHANNELS"), `Discord channels that are allowed to use the bot ("channel1,channel2")`)
+	UserIDs        = flag.String("users", os.Getenv("DISCORD_USERS"), `Discord users that are allowed to use the bot ("user1,user2")`)
 	BotToken       = flag.String("token", os.Getenv("DISCORD_TOKEN"), "Bot access token")
 	ShellBinary    = flag.String("shell", "sh", "The name or path of the Shell Binary to invoke")
 	ExportVars     = flag.String("export-vars", "", `export environment vars to shell command ("VAR1,VAR2,...")`)
@@ -66,6 +67,17 @@ func init() {
 	session.AddHandler(func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 
 		if *ChannelIDs != "" && !strings.Contains(*ChannelIDs, interaction.ChannelID) {
+			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "Unauthorized",
+				},
+			})
+
+			return
+		}
+
+		if *UserIDs != "" && !strings.Contains(*UserIDs, interaction.Member.User.ID) {
 			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
